@@ -9,7 +9,7 @@ DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class CaesarDecrypter:
     """
-    A class to train and utilize a T5 model for decrypting Caesar cipher text.
+    A class to train and utilize a Flan-T5 model for decrypting Caesar cipher text.
     """
 
     def __init__(self, path_to_model: str):

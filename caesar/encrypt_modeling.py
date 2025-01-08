@@ -96,6 +96,7 @@ class CaesarEncryptModel(nn.Module):
         char_emb = self.char_embed(x_chars)
         shift_emb = self.shift_embed(x_shifts)
 
+        # Expand shifts tensor for batching mode
         if len(char_emb.size()) == 3:
             shift_emb = shift_emb.unsqueeze(1).expand(-1, x_chars.size(1), -1)
 
@@ -109,7 +110,7 @@ class CaesarEncryptModel(nn.Module):
 
 class CaesarEncrypter:
     """
-    Wrapper class for training, loading, and generating text with the CaesarEncryptModel.
+    Wrapper class for training, loading, and generating encrypted text for Caesar encryption.
     """
 
     def __init__(self):
@@ -182,11 +183,15 @@ class CaesarEncrypter:
         Returns:
             str: Encrypted ciphertext string.
         """
+        # Save caps to restore the later
         caps = [i for i, _ in enumerate(plaintext) if plaintext[i].isupper()]
+
+        # Convert literal chars into tensor
         to_convert = {i: ch.lower() for i, ch in enumerate(plaintext) if ch.isalpha()}
         x_enc = [char2idx[ch] for ch in to_convert.values()]
         x_tensor = torch.tensor([x_enc], dtype=torch.long, device=device)
 
+        # Clip the shift and convert into tensor
         shift_val = min(max(shift, 0), 25)
         shift_tensor = torch.tensor([shift_val], dtype=torch.long, device=device)
 
@@ -197,6 +202,7 @@ class CaesarEncrypter:
         pred_ids = logits.argmax(dim=-1).squeeze(0)
         ciphertext = "".join(idx2char[idx.item()] for idx in pred_ids)
 
+        # Augment the encrypted output with non-literal chars
         result = []
         convert_char_counter = 0
         for i, source_char in enumerate(plaintext):
@@ -207,6 +213,8 @@ class CaesarEncrypter:
                 result.append(source_char)
 
         result = "".join(result)
+
+        # Restore caps
         result = apply_caps(result, caps)
 
         return result
